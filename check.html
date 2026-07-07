@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Проверка подписи</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: Arial, sans-serif; background: #0d1117; color: #e6edf3; }
+        .container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        .card { background: #161b22; border-radius: 12px; padding: 40px; border: 1px solid #30363d; }
+        h1 { color: #58a6ff; margin-bottom: 20px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; color: #8b949e; }
+        .form-group input[type="file"] { display: block; width: 100%; padding: 10px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #e6edf3; }
+        .btn { background: #238636; color: white; border: none; padding: 12px 30px; border-radius: 6px; font-size: 16px; cursor: pointer; transition: 0.2s; }
+        .btn:hover { background: #2ea043; }
+        .btn:disabled { background: #21262d; color: #484f58; cursor: not-allowed; }
+        .btn.secondary { background: #1f2937; }
+        .btn.secondary:hover { background: #30363d; }
+        .info { background: #1f2937; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #238636; }
+        .info.error { border-color: #f85149; }
+        .hidden { display: none; }
+        .code-block { background: #0d1117; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 14px; white-space: pre-wrap; word-break: break-word; border: 1px solid #30363d; margin: 10px 0; max-height: 400px; overflow-y: auto; }
+        .back-link { display: inline-block; margin-top: 20px; color: #58a6ff; text-decoration: none; }
+        .back-link:hover { text-decoration: underline; }
+        footer { text-align: center; padding: 30px; color: #8b949e; font-size: 14px; border-top: 1px solid #30363d; margin-top: 40px; }
+    </style>
+</head>
+<body>
+
+    <div id="header"></div>
+    <script>
+        fetch('header.html')
+            .then(r => r.text())
+            .then(data => document.getElementById('header').innerHTML = data)
+            .catch(() => {});
+    </script>
+
+    <div class="container">
+        <div class="card">
+            <h1>🔍 Проверка подписи</h1>
+            <p style="color: #8b949e; margin-bottom: 20px;">Загрузите <code>.iagreesign</code> от клиента, чтобы получить готовый документ</p>
+
+            <div class="form-group">
+                <label for="signFile">Выберите файл (.iagreesign):</label>
+                <input type="file" id="signFile" accept=".iagreesign">
+            </div>
+
+            <button id="checkBtn" class="btn" disabled>Проверить</button>
+
+            <div id="result" class="hidden" style="margin-top: 20px;">
+                <div class="info">
+                    <p><strong>✅ Документ готов!</strong></p>
+                </div>
+                <div class="code-block" id="textContent"></div>
+                <button id="downloadTxtBtn" class="btn secondary" style="margin-top: 10px;">📥 Скачать .txt</button>
+            </div>
+
+            <div id="error" class="hidden info error" style="margin-top: 20px;">
+                <p>❌ Ошибка: файл повреждён или не является .iagreesign</p>
+            </div>
+
+            <a href="index.html" class="back-link">← На главную</a>
+        </div>
+    </div>
+
+    <footer>© 2026 IAgree — Сервис подписания согласий</footer>
+
+    <script>
+        let signBytes = null;
+        let signText = '';
+
+        const fileInput = document.getElementById('signFile');
+        const checkBtn = document.getElementById('checkBtn');
+        const resultDiv = document.getElementById('result');
+        const errorDiv = document.getElementById('error');
+        const textContent = document.getElementById('textContent');
+        const downloadTxtBtn = document.getElementById('downloadTxtBtn');
+
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                signBytes = new Uint8Array(event.target.result);
+                checkBtn.disabled = false;
+                resultDiv.classList.add('hidden');
+                errorDiv.classList.add('hidden');
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        checkBtn.addEventListener('click', function() {
+            if (!signBytes) return;
+
+            try {
+                // Декодируем байты в текст
+                const decoder = new TextDecoder('utf-8');
+                signText = decoder.decode(signBytes);
+
+                // Проверяем, есть ли хоть какой-то текст
+                if (!signText.trim()) {
+                    throw new Error('Файл пуст');
+                }
+
+                textContent.textContent = signText;
+                resultDiv.classList.remove('hidden');
+                errorDiv.classList.add('hidden');
+            } catch (error) {
+                errorDiv.classList.remove('hidden');
+                resultDiv.classList.add('hidden');
+                console.error('Ошибка:', error);
+            }
+        });
+
+        downloadTxtBtn.addEventListener('click', function() {
+            if (!signText) return;
+            const blob = new Blob([signText], { type: 'text/plain;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'agreement.txt';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+        });
+    </script>
+
+</body>
+</html>
