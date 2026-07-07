@@ -19,74 +19,84 @@
         .back-link:hover { text-decoration: underline; }
         .btn-group { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0; }
         footer { text-align: center; padding: 30px; color: #8b949e; font-size: 14px; border-top: 1px solid #30363d; margin-top: 40px; }
+        header { background: #161b22; padding: 15px 30px; border-bottom: 1px solid #30363d; margin-bottom: 30px; }
+        header > div { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        header a { color: #58a6ff; font-size: 24px; font-weight: bold; text-decoration: none; }
+        header nav { display: flex; gap: 15px; flex-wrap: wrap; }
+        header nav a { color: #8b949e; text-decoration: none; font-size: 14px; }
+        header nav a:hover { color: #e6edf3; }
     </style>
 </head>
 <body>
 
-    <div style="max-width: 1200px; margin: 0 auto; padding: 15px 30px; text-align: center; border-bottom: 1px solid #30363d; margin-bottom: 30px;">
-        <a href="index.html" style="color: #58a6ff; font-size: 24px; font-weight: bold; text-decoration: none;">📄 IAgree</a>
+<header>
+    <div>
+        <a href="index.html">📄 IAgree</a>
+        <nav>
+            <a href="admin.html">📤 Админ</a>
+            <a href="create.html">🔑 Создать подпись</a>
+            <a href="sign.html">✍️ Подписать</a>
+            <a href="check.html">🔍 Проверить</a>
+        </nav>
     </div>
+</header>
 
-    <div class="container">
-        <div class="card">
-            <h1>✅ Документ подписан!</h1>
-            <div class="info">
-                <p>Скачайте файлы и отправьте их админу.</p>
-            </div>
-
-            <div class="btn-group">
-                <button id="downloadJson" class="btn">📥 Скачать .json</button>
-                <button id="downloadSign" class="btn">📥 Скачать .iagreesign</button>
-            </div>
-
-            <a href="index.html" class="back-link">← На главную</a>
+<div class="container">
+    <div class="card">
+        <h1>✅ Документ подписан!</h1>
+        <div class="info">
+            <p>Скачайте файлы и отправьте их админу.</p>
         </div>
+
+        <div class="btn-group">
+            <button id="downloadJson" class="btn">📥 Скачать .json</button>
+            <button id="downloadSign" class="btn">📥 Скачать .iagreesign</button>
+        </div>
+
+        <a href="index.html" class="back-link">← На главную</a>
     </div>
+</div>
 
-    <footer>© 2026 IAgree — Сервис подписания согласий</footer>
+<footer>© 2026 IAgree — Сервис подписания согласий</footer>
 
-    <script>
-        const filledText = localStorage.getItem('iagreesign_text');
-        const jsonData = localStorage.getItem('iagreesign_json');
+<script>
+    const filledText = localStorage.getItem('iagreesign_text');
+    const jsonData = localStorage.getItem('iagreesign_json');
 
-        if (!filledText || !jsonData) {
-            document.querySelector('.card').innerHTML = `
-                <h1 style="color: #f85149;">⚠️ Нет данных</h1>
-                <p style="color: #8b949e;">Вы не подписывали документ. <a href="sign.html" style="color: #58a6ff;">Вернуться к подписанию</a></p>
-            `;
-        }
+    if (!filledText || !jsonData) {
+        document.querySelector('.card').innerHTML = `
+            <h1 style="color: #f85149;">⚠️ Нет данных</h1>
+            <p style="color: #8b949e;">Вы не подписывали документ. <a href="sign.html" style="color: #58a6ff;">Вернуться к подписанию</a></p>
+            <a href="index.html" class="back-link">← На главную</a>
+        `;
+    }
 
-        document.getElementById('downloadJson').addEventListener('click', function() {
-            if (!jsonData) return;
-            const blob = new Blob([jsonData], { type: 'application/json' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'agreement.json';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            setTimeout(() => URL.revokeObjectURL(link.href), 1000);
-        });
+    document.getElementById('downloadJson').addEventListener('click', function() {
+        if (!jsonData) return;
+        const blob = new Blob([jsonData], { type: 'application/json' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'agreement.json';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    });
 
-        document.getElementById('downloadSign').addEventListener('click', function() {
-            if (!filledText) return;
-            const encoder = new TextEncoder();
-            const bytes = encoder.encode(filledText);
-            const blob = new Blob([bytes], { type: 'application/octet-stream' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'document.iagreesign';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            setTimeout(() => URL.revokeObjectURL(link.href), 1000);
-        });
-
-        // Если данные есть, но пользователь зашёл на result без подписи — очищаем localStorage после скачивания
-        window.addEventListener('beforeunload', function() {
-            // Не очищаем сразу, чтобы можно было скачать оба файла
-        });
-    </script>
+    document.getElementById('downloadSign').addEventListener('click', function() {
+        if (!filledText) return;
+        const encoder = new TextEncoder();
+        const bytes = encoder.encode(filledText);
+        const blob = new Blob([bytes], { type: 'application/octet-stream' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'document.iagreesign';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    });
+</script>
 
 </body>
 </html>
