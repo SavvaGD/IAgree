@@ -23,103 +23,113 @@
         .back-link:hover { text-decoration: underline; }
         .hidden { display: none; }
         footer { text-align: center; padding: 30px; color: #8b949e; font-size: 14px; border-top: 1px solid #30363d; margin-top: 40px; }
+        header { background: #161b22; padding: 15px 30px; border-bottom: 1px solid #30363d; margin-bottom: 30px; }
+        header > div { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        header a { color: #58a6ff; font-size: 24px; font-weight: bold; text-decoration: none; }
+        header nav { display: flex; gap: 15px; flex-wrap: wrap; }
+        header nav a { color: #8b949e; text-decoration: none; font-size: 14px; }
+        header nav a:hover { color: #e6edf3; }
     </style>
 </head>
 <body>
 
-    <div id="header"></div>
-    <script>
-        fetch('header.html')
-            .then(r => r.text())
-            .then(data => document.getElementById('header').innerHTML = data)
-            .catch(() => {});
-    </script>
-
-    <div class="container">
-        <div class="card">
-            <h1>🔑 Создать подпись</h1>
-            <p style="color: #8b949e; margin-bottom: 20px;">Создайте уникальные ID и пароль для подписания документов</p>
-
-            <button id="createBtn" class="btn">Создать подпись</button>
-
-            <div id="result" class="hidden" style="margin-top: 20px;">
-                <div class="info">
-                    <p><strong>✅ Подпись создана!</strong></p>
-                    <p style="color: #8b949e; margin: 10px 0 5px;">Ваш ID:</p>
-                    <div class="code-block" id="idDisplay"></div>
-                    <p style="color: #8b949e; margin: 10px 0 5px;">Ваш пароль:</p>
-                    <div class="code-block" id="passwordDisplay"></div>
-                    <p class="warning">⚠️ Сохраните ID и пароль. Они не будут показаны снова.</p>
-                </div>
-                <button id="copyBtn" class="btn secondary">📋 Скопировать ID и пароль</button>
-            </div>
-
-            <div id="error" class="hidden info error" style="margin-top: 20px;">
-                <p id="errorText">❌ Ошибка</p>
-            </div>
-
-            <a href="index.html" class="back-link">← На главную</a>
-        </div>
+<header>
+    <div>
+        <a href="index.html">📄 IAgree</a>
+        <nav>
+            <a href="admin.html">📤 Админ</a>
+            <a href="create.html">🔑 Создать подпись</a>
+            <a href="sign.html">✍️ Подписать</a>
+            <a href="check.html">🔍 Проверить</a>
+        </nav>
     </div>
+</header>
 
-    <footer>© 2026 IAgree — Сервис подписания согласий</footer>
+<div class="container">
+    <div class="card">
+        <h1>🔑 Создать подпись</h1>
+        <p style="color: #8b949e; margin-bottom: 20px;">Создайте уникальные ID и пароль для подписания документов</p>
 
-    <script>
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxHO9qIlOU47nYogtsjOXMVZJM6CfJhIVmwkvOtOC9NT3zMDz_345QK22b14m6ZmidM/exec';
+        <button id="createBtn" class="btn">Создать подпись</button>
 
-        const createBtn = document.getElementById('createBtn');
-        const resultDiv = document.getElementById('result');
-        const errorDiv = document.getElementById('error');
-        const errorText = document.getElementById('errorText');
-        const idDisplay = document.getElementById('idDisplay');
-        const passwordDisplay = document.getElementById('passwordDisplay');
-        const copyBtn = document.getElementById('copyBtn');
+        <div id="result" class="hidden" style="margin-top: 20px;">
+            <div class="info">
+                <p><strong>✅ Подпись создана!</strong></p>
+                <p style="color: #8b949e; margin: 10px 0 5px;">Ваш ID:</p>
+                <div class="code-block" id="idDisplay"></div>
+                <p style="color: #8b949e; margin: 10px 0 5px;">Ваш пароль:</p>
+                <div class="code-block" id="passwordDisplay"></div>
+                <p class="warning">⚠️ Сохраните ID и пароль. Они не будут показаны снова.</p>
+            </div>
+            <button id="copyBtn" class="btn secondary">📋 Скопировать ID и пароль</button>
+        </div>
 
-        let lastId = '';
-        let lastPassword = '';
+        <div id="error" class="hidden info error" style="margin-top: 20px;">
+            <p id="errorText">❌ Ошибка</p>
+        </div>
 
-        createBtn.addEventListener('click', async function() {
-            createBtn.disabled = true;
-            createBtn.textContent = '⏳ Создание...';
-            resultDiv.classList.add('hidden');
-            errorDiv.classList.add('hidden');
+        <a href="index.html" class="back-link">← На главную</a>
+    </div>
+</div>
 
-            try {
-                const response = await fetch(SCRIPT_URL + '?action=create');
-                const data = await response.json();
+<footer>© 2026 IAgree — Сервис подписания согласий</footer>
 
-                if (data.success) {
-                    lastId = data.id;
-                    lastPassword = data.password;
-                    idDisplay.textContent = lastId;
-                    passwordDisplay.textContent = lastPassword;
-                    resultDiv.classList.remove('hidden');
-                } else {
-                    errorText.textContent = '❌ ' + (data.error || 'Неизвестная ошибка');
-                    errorDiv.classList.remove('hidden');
-                }
-            } catch (error) {
-                errorText.textContent = '❌ Ошибка соединения. Попробуйте позже.';
+<script>
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxHO9qIlOU47nYogtsjOXMVZJM6CfJhIVmwkvOtOC9NT3zMDz_345QK22b14m6ZmidM/exec';
+
+    const createBtn = document.getElementById('createBtn');
+    const resultDiv = document.getElementById('result');
+    const errorDiv = document.getElementById('error');
+    const errorText = document.getElementById('errorText');
+    const idDisplay = document.getElementById('idDisplay');
+    const passwordDisplay = document.getElementById('passwordDisplay');
+    const copyBtn = document.getElementById('copyBtn');
+
+    let lastId = '';
+    let lastPassword = '';
+
+    createBtn.addEventListener('click', async function() {
+        createBtn.disabled = true;
+        createBtn.textContent = '⏳ Создание...';
+        resultDiv.classList.add('hidden');
+        errorDiv.classList.add('hidden');
+
+        try {
+            const response = await fetch(SCRIPT_URL + '?action=create');
+            const data = await response.json();
+
+            if (data.success) {
+                lastId = data.id;
+                lastPassword = data.password;
+                idDisplay.textContent = lastId;
+                passwordDisplay.textContent = lastPassword;
+                resultDiv.classList.remove('hidden');
+            } else {
+                errorText.textContent = '❌ ' + (data.error || 'Неизвестная ошибка');
                 errorDiv.classList.remove('hidden');
-            } finally {
-                createBtn.disabled = false;
-                createBtn.textContent = 'Создать подпись';
             }
-        });
+        } catch (error) {
+            errorText.textContent = '❌ Ошибка соединения. Попробуйте позже.';
+            errorDiv.classList.remove('hidden');
+        } finally {
+            createBtn.disabled = false;
+            createBtn.textContent = 'Создать подпись';
+        }
+    });
 
-        copyBtn.addEventListener('click', function() {
-            if (!lastId || !lastPassword) return;
-            const text = `ID: ${lastId}\nПароль: ${lastPassword}`;
-            navigator.clipboard.writeText(text).then(() => {
-                copyBtn.textContent = '✅ Скопировано!';
-                setTimeout(() => {
-                    copyBtn.textContent = '📋 Скопировать ID и пароль';
-                }, 2000);
-            }).catch(() => {
-                alert('Не удалось скопировать. Скопируйте вручную.');
-            });
+    copyBtn.addEventListener('click', function() {
+        if (!lastId || !lastPassword) return;
+        const text = `ID: ${lastId}\nПароль: ${lastPassword}`;
+        navigator.clipboard.writeText(text).then(() => {
+            copyBtn.textContent = '✅ Скопировано!';
+            setTimeout(() => {
+                copyBtn.textContent = '📋 Скопировать ID и пароль';
+            }, 2000);
+        }).catch(() => {
+            alert('Не удалось скопировать. Скопируйте вручную.');
         });
-    </script>
+    });
+</script>
 
 </body>
 </html>
