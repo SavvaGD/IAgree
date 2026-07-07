@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IAgree — сервис подписания согласий</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: Arial, sans-serif; background: #0d1117; color: #e6edf3; }
+        .container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        .card { background: #161b22; border-radius: 12px; padding: 40px; border: 1px solid #30363d; }
+        h1 { font-size: 32px; color: #58a6ff; margin-bottom: 15px; }
+        .subtitle { color: #8b949e; font-size: 18px; margin-bottom: 30px; }
+        .description { color: #c9d1d9; font-size: 16px; line-height: 1.6; margin-bottom: 30px; }
+        .description strong { color: #58a6ff; }
+        .steps { background: #0d1117; border-radius: 8px; padding: 20px; margin-bottom: 30px; border-left: 4px solid #238636; }
+        .steps ol { margin-left: 20px; color: #c9d1d9; }
+        .steps li { margin: 8px 0; }
+        .btn-group { display: flex; gap: 15px; flex-wrap: wrap; }
+        .btn { background: #238636; color: white; border: none; padding: 12px 30px; border-radius: 6px; font-size: 16px; cursor: pointer; text-decoration: none; display: inline-block; transition: 0.2s; }
+        .btn:hover { background: #2ea043; }
+        .btn.secondary { background: #1f2937; }
+        .btn.secondary:hover { background: #30363d; }
+        footer { text-align: center; padding: 30px; color: #8b949e; font-size: 14px; border-top: 1px solid #30363d; margin-top: 40px; }
+    </style>
+</head>
+<body>
+
+    <div id="header"></div>
+    <script>
+        fetch('header.html')
+            .then(r => r.text())
+            .then(data => document.getElementById('header').innerHTML = data)
+            .catch(() => document.getElementById('header').innerHTML = '<header style="background:#161b22;padding:15px 30px;border-bottom:1px solid #30363d;"><div style="max-width:1200px;margin:0 auto;color:#58a6ff;font-size:24px;font-weight:bold;">📄 IAgree</div></header>');
+    </script>
+
+    <div class="container">
+        <div class="card">
+            <h1>📄 IAgree</h1>
+            <p class="subtitle">Сервис для подписания согласий с переменными</p>
+
+            <div class="description">
+                <p><strong>IAgree</strong> позволяет создавать шаблоны согласий с переменными <strong>{...}</strong> и подписью <strong>&lt;...&gt;</strong>, отправлять их клиентам на подпись и получать готовые документы.</p>
+            </div>
+
+            <div class="steps">
+                <ol>
+                    <li><strong>Админ</strong> загружает шаблон <code>.txt</code> с переменными <code>{firstname}</code> и подписью <code>&lt;signature&gt;</code></li>
+                    <li>Сервис генерирует <strong>.iagreensign</strong> — бинарный файл для клиента</li>
+                    <li><strong>Клиент</strong> загружает <strong>.iagreensign</strong>, заполняет поля и подписывает</li>
+                    <li>Сервис выдаёт <strong>.json</strong> с данными и <strong>.iagreesign</strong> — заполненный документ</li>
+                    <li><strong>Админ</strong> загружает <strong>.iagreesign</strong> и скачивает готовый <strong>.txt</strong></li>
+                </ol>
+            </div>
+
+            <div class="btn-group">
+                <a href="admin.html" class="btn">📤 Админ — загрузить шаблон</a>
+                <a href="sign.html" class="btn secondary">✍️ Клиент — подписать</a>
+                <a href="check.html" class="btn secondary">🔍 Проверить подпись</a>
+            </div>
+        </div>
+    </div>
+
+    <footer>© 2026 IAgree — Сервис подписания согласий</footer>
+
+</body>
+              </html>
