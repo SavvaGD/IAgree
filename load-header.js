@@ -1,0 +1,30 @@
+// load-header.js
+(function() {
+    const headerPlaceholder = document.getElementById('header');
+    if (!headerPlaceholder) return;
+
+    fetch('header.html')
+        .then(response => {
+            if (!response.ok) throw new Error('Header not found');
+            return response.text();
+        })
+        .then(html => {
+            headerPlaceholder.innerHTML = html;
+        })
+        .catch(() => {
+            // Резервная шапка, если файл не загрузился
+            headerPlaceholder.innerHTML = `
+                <header style="background:#161b22;padding:15px 30px;border-bottom:1px solid #30363d;margin-bottom:30px;">
+                    <div style="max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+                        <a href="index.html" style="color:#58a6ff;font-size:24px;font-weight:bold;text-decoration:none;">📄 IAgree</a>
+                        <nav style="display:flex;gap:15px;flex-wrap:wrap;">
+                            <a href="admin.html" style="color:#8b949e;text-decoration:none;font-size:14px;">📤 Админ</a>
+                            <a href="create.html" style="color:#8b949e;text-decoration:none;font-size:14px;">🔑 Создать подпись</a>
+                            <a href="sign.html" style="color:#8b949e;text-decoration:none;font-size:14px;">✍️ Подписать</a>
+                            <a href="check.html" style="color:#8b949e;text-decoration:none;font-size:14px;">🔍 Проверить</a>
+                        </nav>
+                    </div>
+                </header>
+            `;
+        });
+})();
