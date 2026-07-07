@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Подписать документ — IAgree</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: Arial, sans-serif; background: #0d1117; color: #e6edf3; }
+        .container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        .card { background: #161b22; border-radius: 12px; padding: 40px; border: 1px solid #30363d; }
+        h1 { color: #58a6ff; margin-bottom: 20px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; color: #8b949e; }
+        .form-group input[type="file"],
+        .form-group input[type="text"],
+        .form-group input[type="password"] {
+            width: 100%; padding: 10px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #e6edf3; font-size: 14px;
+        }
+        .form-group input[type="file"] { padding: 8px; }
+        .form-group input:focus { border-color: #58a6ff; outline: none; }
+        .btn { background: #238636; color: white; border: none; padding: 12px 30px; border-radius: 6px; font-size: 16px; cursor: pointer; transition: 0.2s; }
+        .btn:hover { background: #2ea043; }
+        .btn:disabled { background: #21262d; color: #484f58; cursor: not-allowed; }
+        .btn.secondary { background: #1f2937; }
+        .btn.secondary:hover { background: #30363d; }
+        .info { background: #1f2937; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #238636; }
+        .info.error { border-color: #f85149; }
+        .hidden { display: none; }
+        .checkbox-group { display: flex; align-items: center; gap: 10px; margin: 15px 0; }
+        .checkbox-group input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; }
+        .back-link { display: inline-block; margin-top: 20px; color: #58a6ff; text-decoration: none; }
+        .back-link:hover { text-decoration: underline; }
+        footer { text-align: center; padding: 30px; color: #8b949e; font-size: 14px; border-top: 1px solid #30363d; margin-top: 40px; }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-overlay.active { display: flex; }
+        .modal { background: #161b22; padding: 30px; border-radius: 12px; max-width: 400px; width: 100%; border: 1px solid #30363d; }
+        .modal h3 { color: #58a6ff; margin-bottom: 15px; }
+        .modal .form-group { margin-bottom: 15px; }
+        .modal .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        .modal .btn-group .btn { flex: 1; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div id="header"></div>
+    <script>
+        fetch('header.html')
+            .then(r => r.text())
+            .then(data => document.getElementById('header').innerHTML = data)
+            .catch(() => {});
+    </script>
+
+    <div class="container">
+        <div class="card">
+            <h1>✍️ Подписать документ</h1>
+            <p style="color: #8b949e; margin-bottom: 20px;">Загрузите <code>.iagreensign</code> и заполните поля</p>
+
+            <div class="form-group">
+                <label for="signFile">Выберите файл (.iagreensign):</label>
+                <input type="file" id="signFile" accept=".iagreensign">
+            </div>
+
+            <div id="formContainer" class="hidden">
+                <div id="fieldsContainer"></div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="agreeCheck">
+                    <label for="agreeCheck" style="color: #8b949e; cursor: pointer;">Я согласен с условиями</label>
+                </div>
+
+                <button id="signBtn" class="btn" disabled>Подписать</button>
+            </div>
+
+            <div id="status" class="hidden info"></div>
+            <div id="error" class="hidden info error"></div>
+
+            <a href="index.html" class="back-link">← На главную</a>
+        </div>
+    </div>
+
+    <!-- Модальное окно для ID и пароля -->
+    <div id="modal" class="modal-overlay">
+        <div class="modal">
+            <h3>🔐 Подтверждение подписи</h3>
+            <p style="color: #8b949e; margin-bottom: 15px;">Введите ID и пароль для подтверждения</p>
+            <div class="form-group">
+                <label for="modalId">ID подписи</label>
+                <input type="text" id="modalId" placeholder="например: ABCD-1234">
+            </div>
+            <div class="form-group">
+                <label for="modalPassword">Пароль</label>
+                <input type="password" id="modalPassword" placeholder="Введите пароль">
+            </div>
+            <div id="modalError" style="color: #f85149; font-size: 14px; margin-bottom: 10px; display: none;">❌ Неверный ID или пароль</div>
+            <div class="btn-group">
+                <button id="modalConfirm" class="btn">✅ Подтвердить</button>
+                <button id="modalCancel" class="btn secondary">❌ Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>© 2026 IAgree — Сервис подписания согласий</footer>
+
+    <script>
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxHO9qIlOU47nYogtsjOXMVZJM6CfJhIVmwkvOtOC9NT3zMDz_345QK22b14m6ZmidM/exec';
+
+        let templateText = '';
+        let variables = {};
+        let signatureTag = '';
+        let isAgree = false;
+        let isVerified = false;
+        let currentId = '';
+        let currentPassword = '';
+
+        const fileInput = document.getElementById('signFile');
+        const formContainer = document.getElementById('formContainer');
+        const fieldsContainer = document.getElementById('fieldsContainer');
+        const agreeCheck = document.getElementById('agreeCheck');
+        const signBtn = document.getElementById('signBtn');
+        const statusDiv = document.getElementById('status');
+        const errorDiv = document.getElementById('error');
+
+        const modal = document.getElementById('modal');
+        const modalId = document.getElementById('modalId');
+        const modalPassword = document.getElementById('modalPassword');
+        const modalError = document.getElementById('modalError');
+        const modalConfirm = document.getElementById('modalConfirm');
+        const modalCancel = document.getElementById('modalCancel');
+
+        // Загрузка файла
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const bytes = new Uint8Array(event.target.result);
+                    const decoder = new TextDecoder('utf-8');
+                    templateText = decoder.decode(bytes);
+
+                    if (!templateText.trim()) {
+                        throw new Error('Файл пуст');
+                    }
+
+                    // Парсим переменные { }
+                    const varMatches = templateText.match(/\{([^}]+)\}/g) || [];
+                    const varNames = varMatches.map(m => m.slice(1, -1));
+
+                    // Парсим подпись < >
+                    const sigMatches = templateText.match(/<([^>]+)>/g) || [];
+                    signatureTag = sigMatches.length > 0 ? sigMatches[0] : '<signature>';
+
+                    // Строим форму
+                    let html = '<h3 style="color: #58a6ff; margin: 20px 0 15px;">Заполните поля</h3>';
+                    varNames.forEach(name => {
+                        html += `
+                            <div class="form-group">
+                                <label>${name}</label>
+                                <input type="text" class="var-input" data-var="${name}" placeholder="${name}">
+                            </div>
+                        `;
+                    });
+
+                    // Показываем подпись
+                    html += `
+                        <div style="background: #0d1117; padding: 10px; border-radius: 6px; margin: 15px 0; border: 1px solid #30363d;">
+                            <p style="color: #8b949e; font-size: 14px;">Подпись: <code>${signatureTag}</code></p>
+                            <p style="color: #8b949e; font-size: 12px; margin-top: 5px;">Поставьте галочку ниже, чтобы согласиться</p>
+                        </div>
+                    `;
+
+                    fieldsContainer.innerHTML = html;
+                    formContainer.classList.remove('hidden');
+                    errorDiv.classList.add('hidden');
+                    statusDiv.classList.add('hidden');
+
+                    // Сброс состояния
+                    isVerified = false;
+                    isAgree = false;
+                    agreeCheck.checked = false;
+                    signBtn.disabled = true;
+
+                    // Обработчик галочки
+                    agreeCheck.onchange = function() {
+                        if (this.checked) {
+                            // Показываем модалку для ввода ID/пароля
+                            modalId.value = '';
+                            modalPassword.value = '';
+                            modalError.style.display = 'none';
+                            modal.classList.add('active');
+                            modalId.focus();
+                        } else {
+                            isVerified = false;
+                            signBtn.disabled = true;
+                        }
+                    };
+
+                } catch (error) {
+                    errorDiv.textContent = '❌ ' + error.message;
+                    errorDiv.classList.remove('hidden');
+                    formContainer.classList.add('hidden');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        // Подтверждение в модалке
+        modalConfirm.addEventListener('click', async function() {
+            const id = modalId.value.trim();
+            const password = modalPassword.value.trim();
+
+            if (!id || !password) {
+                modalError.textContent = '❌ Введите ID и пароль';
+                modalError.style.display = 'block';
+                return;
+            }
+
+            modalConfirm.disabled = true;
+            modalConfirm.textContent = '⏳ Проверка...';
+
+            try {
+                const response = await fetch(SCRIPT_URL + `?action=verify&id=${encodeURIComponent(id)}&password=${encodeURIComponent(password)}`);
+                const data = await response.json();
+
+                if (data.success && data.valid) {
+                    // Всё верно
+                    isVerified = true;
+                    currentId = id;
+                    currentPassword = password;
+                    signBtn.disabled = false;
+                    modal.classList.remove('active');
+                    statusDiv.className = 'info';
+                    statusDiv.textContent = '✅ Подпись подтверждена';
+                    statusDiv.classList.remove('hidden');
+                    modalError.style.display = 'none';
+                } else {
+                    // Неверно
+                    modalError.textContent = '❌ Неверный ID или пароль';
+                    modalError.style.display = 'block';
+                    agreeCheck.checked = false;
+                    isVerified = false;
+                    signBtn.disabled = true;
+                }
+            } catch (error) {
+                modalError.textContent = '❌ Ошибка соединения';
+                modalError.style.display = 'block';
+            } finally {
+                modalConfirm.disabled = false;
+                modalConfirm.textContent = '✅ Подтвердить';
+            }
+        });
+
+        // Отмена в модалке
+        modalCancel.addEventListener('click', function() {
+            modal.classList.remove('active');
+            agreeCheck.checked = false;
+            isVerified = false;
+            signBtn.disabled = true;
+        });
+
+        // Закрытие модалки по клику вне окна
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+                agreeCheck.checked = false;
+                isVerified = false;
+                signBtn.disabled = true;
+            }
+        });
+
+        // Подписание
+        signBtn.addEventListener('click', function() {
+            // Собираем значения переменных
+            const inputs = document.querySelectorAll('.var-input');
+            variables = {};
+            inputs.forEach(input => {
+                const key = input.dataset.var;
+                variables[key] = input.value.trim() || `{${key}}`;
+            });
+
+            // Заменяем переменные в шаблоне
+            let filledText = templateText;
+            for (const [key, value] of Object.entries(variables)) {
+                filledText = filledText.replace(new RegExp(`\\{${key}\\}`, 'g'), value);
+            }
+
+            // Заменяем подпись
+            const signatureValue = isVerified ? '(agree)' : '(not agree)';
+            filledText = filledText.replace(new RegExp(signatureTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), signatureValue);
+
+            // Сохраняем в localStorage
+            localStorage.setItem('iagreesign_text', filledText);
+            localStorage.setItem('iagreesign_json', JSON.stringify({
+                ...variables,
+                signature: signatureValue
+            }));
+
+            // Переходим на страницу результата
+            window.location.href = 'result.html';
+        });
+
+        // Enter в модалке
+        modalPassword.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                modalConfirm.click();
+            }
+        });
+        modalId.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                modalPassword.focus();
+            }
+        });
+    </script>
+
+</body>
+</html>
