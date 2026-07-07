@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Проверка подписи</title>
+    <title>Проверка подписи — IAgree</title>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family: Arial, sans-serif; background: #0d1117; color: #e6edf3; }
@@ -25,108 +25,116 @@
         .back-link { display: inline-block; margin-top: 20px; color: #58a6ff; text-decoration: none; }
         .back-link:hover { text-decoration: underline; }
         footer { text-align: center; padding: 30px; color: #8b949e; font-size: 14px; border-top: 1px solid #30363d; margin-top: 40px; }
+        header { background: #161b22; padding: 15px 30px; border-bottom: 1px solid #30363d; margin-bottom: 30px; }
+        header > div { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        header a { color: #58a6ff; font-size: 24px; font-weight: bold; text-decoration: none; }
+        header nav { display: flex; gap: 15px; flex-wrap: wrap; }
+        header nav a { color: #8b949e; text-decoration: none; font-size: 14px; }
+        header nav a:hover { color: #e6edf3; }
     </style>
 </head>
 <body>
 
-    <div id="header"></div>
-    <script>
-        fetch('header.html')
-            .then(r => r.text())
-            .then(data => document.getElementById('header').innerHTML = data)
-            .catch(() => {});
-    </script>
-
-    <div class="container">
-        <div class="card">
-            <h1>🔍 Проверка подписи</h1>
-            <p style="color: #8b949e; margin-bottom: 20px;">Загрузите <code>.iagreesign</code> от клиента, чтобы получить готовый документ</p>
-
-            <div class="form-group">
-                <label for="signFile">Выберите файл (.iagreesign):</label>
-                <input type="file" id="signFile" accept=".iagreesign">
-            </div>
-
-            <button id="checkBtn" class="btn" disabled>Проверить</button>
-
-            <div id="result" class="hidden" style="margin-top: 20px;">
-                <div class="info">
-                    <p><strong>✅ Документ готов!</strong></p>
-                </div>
-                <div class="code-block" id="textContent"></div>
-                <button id="downloadTxtBtn" class="btn secondary" style="margin-top: 10px;">📥 Скачать .txt</button>
-            </div>
-
-            <div id="error" class="hidden info error" style="margin-top: 20px;">
-                <p>❌ Ошибка: файл повреждён или не является .iagreesign</p>
-            </div>
-
-            <a href="index.html" class="back-link">← На главную</a>
-        </div>
+<header>
+    <div>
+        <a href="index.html">📄 IAgree</a>
+        <nav>
+            <a href="admin.html">📤 Админ</a>
+            <a href="create.html">🔑 Создать подпись</a>
+            <a href="sign.html">✍️ Подписать</a>
+            <a href="check.html">🔍 Проверить</a>
+        </nav>
     </div>
+</header>
 
-    <footer>© 2026 IAgree — Сервис подписания согласий</footer>
+<div class="container">
+    <div class="card">
+        <h1>🔍 Проверка подписи</h1>
+        <p style="color: #8b949e; margin-bottom: 20px;">Загрузите <code>.iagreesign</code> от клиента, чтобы получить готовый документ</p>
 
-    <script>
-        let signBytes = null;
-        let signText = '';
+        <div class="form-group">
+            <label for="signFile">Выберите файл (.iagreesign):</label>
+            <input type="file" id="signFile" accept=".iagreesign">
+        </div>
 
-        const fileInput = document.getElementById('signFile');
-        const checkBtn = document.getElementById('checkBtn');
-        const resultDiv = document.getElementById('result');
-        const errorDiv = document.getElementById('error');
-        const textContent = document.getElementById('textContent');
-        const downloadTxtBtn = document.getElementById('downloadTxtBtn');
+        <button id="checkBtn" class="btn" disabled>Проверить</button>
 
-        fileInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
+        <div id="result" class="hidden" style="margin-top: 20px;">
+            <div class="info">
+                <p><strong>✅ Документ готов!</strong></p>
+            </div>
+            <div class="code-block" id="textContent"></div>
+            <button id="downloadTxtBtn" class="btn secondary" style="margin-top: 10px;">📥 Скачать .txt</button>
+        </div>
 
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                signBytes = new Uint8Array(event.target.result);
-                checkBtn.disabled = false;
-                resultDiv.classList.add('hidden');
-                errorDiv.classList.add('hidden');
-            };
-            reader.readAsArrayBuffer(file);
-        });
+        <div id="error" class="hidden info error" style="margin-top: 20px;">
+            <p>❌ Ошибка: файл повреждён или не является .iagreesign</p>
+        </div>
 
-        checkBtn.addEventListener('click', function() {
-            if (!signBytes) return;
+        <a href="index.html" class="back-link">← На главную</a>
+    </div>
+</div>
 
-            try {
-                // Декодируем байты в текст
-                const decoder = new TextDecoder('utf-8');
-                signText = decoder.decode(signBytes);
+<footer>© 2026 IAgree — Сервис подписания согласий</footer>
 
-                // Проверяем, есть ли хоть какой-то текст
-                if (!signText.trim()) {
-                    throw new Error('Файл пуст');
-                }
+<script>
+    let signBytes = null;
+    let signText = '';
 
-                textContent.textContent = signText;
-                resultDiv.classList.remove('hidden');
-                errorDiv.classList.add('hidden');
-            } catch (error) {
-                errorDiv.classList.remove('hidden');
-                resultDiv.classList.add('hidden');
-                console.error('Ошибка:', error);
+    const fileInput = document.getElementById('signFile');
+    const checkBtn = document.getElementById('checkBtn');
+    const resultDiv = document.getElementById('result');
+    const errorDiv = document.getElementById('error');
+    const textContent = document.getElementById('textContent');
+    const downloadTxtBtn = document.getElementById('downloadTxtBtn');
+
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            signBytes = new Uint8Array(event.target.result);
+            checkBtn.disabled = false;
+            resultDiv.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+        };
+        reader.readAsArrayBuffer(file);
+    });
+
+    checkBtn.addEventListener('click', function() {
+        if (!signBytes) return;
+
+        try {
+            const decoder = new TextDecoder('utf-8');
+            signText = decoder.decode(signBytes);
+
+            if (!signText.trim()) {
+                throw new Error('Файл пуст');
             }
-        });
 
-        downloadTxtBtn.addEventListener('click', function() {
-            if (!signText) return;
-            const blob = new Blob([signText], { type: 'text/plain;charset=utf-8' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'agreement.txt';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            setTimeout(() => URL.revokeObjectURL(link.href), 1000);
-        });
-    </script>
+            textContent.textContent = signText;
+            resultDiv.classList.remove('hidden');
+            errorDiv.classList.add('hidden');
+        } catch (error) {
+            errorDiv.classList.remove('hidden');
+            resultDiv.classList.add('hidden');
+            console.error('Ошибка:', error);
+        }
+    });
+
+    downloadTxtBtn.addEventListener('click', function() {
+        if (!signText) return;
+        const blob = new Blob([signText], { type: 'text/plain;charset=utf-8' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'agreement.txt';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    });
+</script>
 
 </body>
 </html>
