@@ -25,95 +25,103 @@
         .back-link { display: inline-block; margin-top: 20px; color: #58a6ff; text-decoration: none; }
         .back-link:hover { text-decoration: underline; }
         footer { text-align: center; padding: 30px; color: #8b949e; font-size: 14px; border-top: 1px solid #30363d; margin-top: 40px; }
+        header { background: #161b22; padding: 15px 30px; border-bottom: 1px solid #30363d; margin-bottom: 30px; }
+        header > div { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        header a { color: #58a6ff; font-size: 24px; font-weight: bold; text-decoration: none; }
+        header nav { display: flex; gap: 15px; flex-wrap: wrap; }
+        header nav a { color: #8b949e; text-decoration: none; font-size: 14px; }
+        header nav a:hover { color: #e6edf3; }
     </style>
 </head>
 <body>
 
-    <div id="header"></div>
-    <script>
-        fetch('header.html')
-            .then(r => r.text())
-            .then(data => document.getElementById('header').innerHTML = data)
-            .catch(() => {});
-    </script>
-
-    <div class="container">
-        <div class="card">
-            <h1>📤 Загрузка шаблона</h1>
-            <p style="color: #8b949e; margin-bottom: 20px;">Загрузите <code>.txt</code> файл с переменными <code>{...}</code> и подписью <code>&lt;...&gt;</code></p>
-
-            <div class="form-group">
-                <label for="templateFile">Выберите шаблон (.txt):</label>
-                <input type="file" id="templateFile" accept=".txt">
-            </div>
-
-            <button id="generateBtn" class="btn" disabled>Сгенерировать .iagreensign</button>
-
-            <div id="result" class="hidden" style="margin-top: 20px;">
-                <div class="info">
-                    <p><strong>✅ Готово!</strong> Скачайте файл и отправьте клиенту.</p>
-                </div>
-                <button id="downloadBtn" class="btn secondary">📥 Скачать .iagreensign</button>
-            </div>
-
-            <a href="index.html" class="back-link">← На главную</a>
-        </div>
+<header>
+    <div>
+        <a href="index.html">📄 IAgree</a>
+        <nav>
+            <a href="admin.html">📤 Админ</a>
+            <a href="create.html">🔑 Создать подпись</a>
+            <a href="sign.html">✍️ Подписать</a>
+            <a href="check.html">🔍 Проверить</a>
+        </nav>
     </div>
+</header>
 
-    <footer>© 2026 IAgree — Сервис подписания согласий</footer>
+<div class="container">
+    <div class="card">
+        <h1>📤 Загрузка шаблона</h1>
+        <p style="color: #8b949e; margin-bottom: 20px;">Загрузите <code>.txt</code> файл с переменными <code>{...}</code> и подписью <code>&lt;...&gt;</code></p>
 
-    <script>
-        let templateText = '';
-        let iagreensignBlob = null;
+        <div class="form-group">
+            <label for="templateFile">Выберите шаблон (.txt):</label>
+            <input type="file" id="templateFile" accept=".txt">
+        </div>
 
-        const fileInput = document.getElementById('templateFile');
-        const generateBtn = document.getElementById('generateBtn');
-        const resultDiv = document.getElementById('result');
-        const downloadBtn = document.getElementById('downloadBtn');
+        <button id="generateBtn" class="btn" disabled>Сгенерировать .iagreensign</button>
 
-        fileInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
+        <div id="result" class="hidden" style="margin-top: 20px;">
+            <div class="info">
+                <p><strong>✅ Готово!</strong> Скачайте файл и отправьте клиенту.</p>
+            </div>
+            <button id="downloadBtn" class="btn secondary">📥 Скачать .iagreensign</button>
+        </div>
 
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                templateText = event.target.result;
-                generateBtn.disabled = false;
-            };
-            reader.readAsText(file);
-        });
+        <a href="index.html" class="back-link">← На главную</a>
+    </div>
+</div>
 
-        generateBtn.addEventListener('click', function() {
-            if (!templateText) return;
+<footer>© 2026 IAgree — Сервис подписания согласий</footer>
 
-            // Проверка: есть ли переменные и подпись
-            const hasVariables = templateText.includes('{') && templateText.includes('}');
-            const hasSignature = templateText.includes('<') && templateText.includes('>');
+<script>
+    let templateText = '';
+    let iagreensignBlob = null;
 
-            if (!hasVariables && !hasSignature) {
-                alert('⚠️ Шаблон не содержит переменных { } или подписи < >. Убедитесь, что файл корректен.');
-                return;
-            }
+    const fileInput = document.getElementById('templateFile');
+    const generateBtn = document.getElementById('generateBtn');
+    const resultDiv = document.getElementById('result');
+    const downloadBtn = document.getElementById('downloadBtn');
 
-            // Кодируем текст в байты
-            const encoder = new TextEncoder();
-            const bytes = encoder.encode(templateText);
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
 
-            iagreensignBlob = new Blob([bytes], { type: 'application/octet-stream' });
-            resultDiv.classList.remove('hidden');
-        });
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            templateText = event.target.result;
+            generateBtn.disabled = false;
+        };
+        reader.readAsText(file);
+    });
 
-        downloadBtn.addEventListener('click', function() {
-            if (!iagreensignBlob) return;
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(iagreensignBlob);
-            link.download = 'document.iagreensign';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            setTimeout(() => URL.revokeObjectURL(link.href), 1000);
-        });
-    </script>
+    generateBtn.addEventListener('click', function() {
+        if (!templateText) return;
+
+        const hasVariables = templateText.includes('{') && templateText.includes('}');
+        const hasSignature = templateText.includes('<') && templateText.includes('>');
+
+        if (!hasVariables && !hasSignature) {
+            alert('⚠️ Шаблон не содержит переменных { } или подписи < >. Убедитесь, что файл корректен.');
+            return;
+        }
+
+        const encoder = new TextEncoder();
+        const bytes = encoder.encode(templateText);
+
+        iagreensignBlob = new Blob([bytes], { type: 'application/octet-stream' });
+        resultDiv.classList.remove('hidden');
+    });
+
+    downloadBtn.addEventListener('click', function() {
+        if (!iagreensignBlob) return;
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(iagreensignBlob);
+        link.download = 'document.iagreensign';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    });
+</script>
 
 </body>
 </html>
