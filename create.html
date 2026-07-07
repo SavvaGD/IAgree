@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Создать подпись — IAgree</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: Arial, sans-serif; background: #0d1117; color: #e6edf3; }
+        .container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        .card { background: #161b22; border-radius: 12px; padding: 40px; border: 1px solid #30363d; }
+        h1 { color: #58a6ff; margin-bottom: 20px; }
+        .btn { background: #238636; color: white; border: none; padding: 12px 30px; border-radius: 6px; font-size: 16px; cursor: pointer; transition: 0.2s; }
+        .btn:hover { background: #2ea043; }
+        .btn:disabled { background: #21262d; color: #484f58; cursor: not-allowed; }
+        .btn.secondary { background: #1f2937; }
+        .btn.secondary:hover { background: #30363d; }
+        .info { background: #1f2937; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #238636; }
+        .info.error { border-color: #f85149; }
+        .code-block { background: #0d1117; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 16px; border: 1px solid #30363d; margin: 10px 0; word-break: break-all; }
+        .warning { color: #f85149; font-size: 14px; margin-top: 10px; }
+        .back-link { display: inline-block; margin-top: 20px; color: #58a6ff; text-decoration: none; }
+        .back-link:hover { text-decoration: underline; }
+        .hidden { display: none; }
+        footer { text-align: center; padding: 30px; color: #8b949e; font-size: 14px; border-top: 1px solid #30363d; margin-top: 40px; }
+    </style>
+</head>
+<body>
+
+    <div id="header"></div>
+    <script>
+        fetch('header.html')
+            .then(r => r.text())
+            .then(data => document.getElementById('header').innerHTML = data)
+            .catch(() => {});
+    </script>
+
+    <div class="container">
+        <div class="card">
+            <h1>🔑 Создать подпись</h1>
+            <p style="color: #8b949e; margin-bottom: 20px;">Создайте уникальные ID и пароль для подписания документов</p>
+
+            <button id="createBtn" class="btn">Создать подпись</button>
+
+            <div id="result" class="hidden" style="margin-top: 20px;">
+                <div class="info">
+                    <p><strong>✅ Подпись создана!</strong></p>
+                    <p style="color: #8b949e; margin: 10px 0 5px;">Ваш ID:</p>
+                    <div class="code-block" id="idDisplay"></div>
+                    <p style="color: #8b949e; margin: 10px 0 5px;">Ваш пароль:</p>
+                    <div class="code-block" id="passwordDisplay"></div>
+                    <p class="warning">⚠️ Сохраните ID и пароль. Они не будут показаны снова.</p>
+                </div>
+                <button id="copyBtn" class="btn secondary">📋 Скопировать ID и пароль</button>
+            </div>
+
+            <div id="error" class="hidden info error" style="margin-top: 20px;">
+                <p id="errorText">❌ Ошибка</p>
+            </div>
+
+            <a href="index.html" class="back-link">← На главную</a>
+        </div>
+    </div>
+
+    <footer>© 2026 IAgree — Сервис подписания согласий</footer>
+
+    <script>
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxHO9qIlOU47nYogtsjOXMVZJM6CfJhIVmwkvOtOC9NT3zMDz_345QK22b14m6ZmidM/exec';
+
+        const createBtn = document.getElementById('createBtn');
+        const resultDiv = document.getElementById('result');
+        const errorDiv = document.getElementById('error');
+        const errorText = document.getElementById('errorText');
+        const idDisplay = document.getElementById('idDisplay');
+        const passwordDisplay = document.getElementById('passwordDisplay');
+        const copyBtn = document.getElementById('copyBtn');
+
+        let lastId = '';
+        let lastPassword = '';
+
+        createBtn.addEventListener('click', async function() {
+            createBtn.disabled = true;
+            createBtn.textContent = '⏳ Создание...';
+            resultDiv.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+
+            try {
+                const response = await fetch(SCRIPT_URL + '?action=create');
+                const data = await response.json();
+
+                if (data.success) {
+                    lastId = data.id;
+                    lastPassword = data.password;
+                    idDisplay.textContent = lastId;
+                    passwordDisplay.textContent = lastPassword;
+                    resultDiv.classList.remove('hidden');
+                } else {
+                    errorText.textContent = '❌ ' + (data.error || 'Неизвестная ошибка');
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                errorText.textContent = '❌ Ошибка соединения. Попробуйте позже.';
+                errorDiv.classList.remove('hidden');
+            } finally {
+                createBtn.disabled = false;
+                createBtn.textContent = 'Создать подпись';
+            }
+        });
+
+        copyBtn.addEventListener('click', function() {
+            if (!lastId || !lastPassword) return;
+            const text = `ID: ${lastId}\nПароль: ${lastPassword}`;
+            navigator.clipboard.writeText(text).then(() => {
+                copyBtn.textContent = '✅ Скопировано!';
+                setTimeout(() => {
+                    copyBtn.textContent = '📋 Скопировать ID и пароль';
+                }, 2000);
+            }).catch(() => {
+                alert('Не удалось скопировать. Скопируйте вручную.');
+            });
+        });
+    </script>
+
+</body>
+</html>
