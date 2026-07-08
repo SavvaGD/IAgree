@@ -60,6 +60,25 @@
 <footer>© 2026 IAgree — Сервис подписания согласий</footer>
 
 <script>
+    // === БИБЛИОТЕКА БИНАРНОГО ФОРМАТА ===
+    const MAGIC = new Uint8Array([0x49, 0x41, 0x47, 0x52]); // "IAGR"
+    const VERSION = 1;
+
+    function createBinaryFile(text) {
+        const encoder = new TextEncoder();
+        const textBytes = encoder.encode(text);
+        
+        const headerSize = 4 + 1;
+        const totalSize = headerSize + textBytes.length;
+        
+        const result = new Uint8Array(totalSize);
+        result.set(MAGIC, 0);
+        result[4] = VERSION;
+        result.set(textBytes, headerSize);
+        
+        return result;
+    }
+
     const filledText = localStorage.getItem('iagreesign_text');
     const jsonData = localStorage.getItem('iagreesign_json');
 
@@ -85,8 +104,7 @@
 
     document.getElementById('downloadSign').addEventListener('click', function() {
         if (!filledText) return;
-        const encoder = new TextEncoder();
-        const bytes = encoder.encode(filledText);
+        const bytes = createBinaryFile(filledText);
         const blob = new Blob([bytes], { type: 'application/octet-stream' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
