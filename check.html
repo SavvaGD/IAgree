@@ -92,6 +92,13 @@
         const file = e.target.files[0];
         if (!file) return;
 
+        // Проверяем расширение .iagreesign
+        if (!file.name.endsWith('.iagreesign')) {
+            alert('❌ Неверный формат! Нужен файл .iagreesign');
+            fileInput.value = '';
+            return;
+        }
+
         const reader = new FileReader();
         reader.onload = function(event) {
             signBytes = new Uint8Array(event.target.result);
