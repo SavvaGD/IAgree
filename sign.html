@@ -109,6 +109,41 @@
 <script>
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxHO9qIlOU47nYogtsjOXMVZJM6CfJhIVmwkvOtOC9NT3zMDz_345QK22b14m6ZmidM/exec';
 
+    // === БИБЛИОТЕКА БИНАРНОГО ФОРМАТА ===
+    const MAGIC = new Uint8Array([0x49, 0x41, 0x47, 0x52]); // "IAGR"
+    const VERSION = 1;
+
+    function readBinaryFile(bytes) {
+        // Проверяем магию
+        const magic = bytes.slice(0, 4);
+        const expected = new Uint8Array([0x49, 0x41, 0x47, 0x52]);
+        if (magic.length !== expected.length || magic.some((b, i) => b !== expected[i])) {
+            throw new Error('Невалидный .iagreensign файл');
+        }
+        
+        const version = bytes[4];
+        const headerSize = 4 + 1;
+        const textBytes = bytes.slice(headerSize);
+        const decoder = new TextDecoder('utf-8');
+        return decoder.decode(textBytes);
+    }
+
+    function createBinaryFile(text) {
+        const encoder = new TextEncoder();
+        const textBytes = encoder.encode(text);
+        
+        const headerSize = 4 + 1;
+        const totalSize = headerSize + textBytes.length;
+        
+        const result = new Uint8Array(totalSize);
+        result.set(MAGIC, 0);
+        result[4] = VERSION;
+        result.set(textBytes, headerSize);
+        
+        return result;
+    }
+
+    // === ОСНОВНАЯ ЛОГИКА ===
     let templateText = '';
     let varNames = [];
     let signatureTag = '';
@@ -211,7 +246,6 @@
         const file = e.target.files[0];
         if (!file) return;
 
-        // Проверяем расширение .iagreensign
         if (!file.name.endsWith('.iagreensign')) {
             alert('❌ Неверный формат! Нужен файл .iagreensign');
             fileInput.value = '';
@@ -222,8 +256,7 @@
         reader.onload = function(event) {
             try {
                 const bytes = new Uint8Array(event.target.result);
-                const decoder = new TextDecoder('utf-8');
-                templateText = decoder.decode(bytes);
+                templateText = readBinaryFile(bytes);
 
                 if (!templateText.trim()) {
                     throw new Error('Файл пуст');
@@ -337,6 +370,7 @@
         const signatureValue = isVerified ? '(agree)' : '(not agree)';
         filledText = filledText.replace(new RegExp(signatureTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), signatureValue);
 
+        // Сохраняем в localStorage как текст (для result.html)
         localStorage.setItem('iagreesign_text', filledText);
         localStorage.setItem('iagreesign_json', JSON.stringify({
             ...fieldValues,
