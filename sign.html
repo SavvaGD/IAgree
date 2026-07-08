@@ -72,7 +72,6 @@
 
         <div id="formContainer" class="hidden">
             <div id="templatePreview" class="template-preview"></div>
-
             <button id="signBtn" class="btn" disabled>Подписать</button>
         </div>
 
@@ -110,40 +109,25 @@
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxHO9qIlOU47nYogtsjOXMVZJM6CfJhIVmwkvOtOC9NT3zMDz_345QK22b14m6ZmidM/exec';
 
     // === БИБЛИОТЕКА БИНАРНОГО ФОРМАТА ===
-    const MAGIC = new Uint8Array([0x49, 0x41, 0x47, 0x52]); // "IAGR"
-    const VERSION = 1;
+    const MAGIC = new Uint8Array([0x49, 0x41, 0x47, 0x52]);
+    const XOR_KEY = 0x5A;
 
     function readBinaryFile(bytes) {
-        // Проверяем магию
         const magic = bytes.slice(0, 4);
         const expected = new Uint8Array([0x49, 0x41, 0x47, 0x52]);
         if (magic.length !== expected.length || magic.some((b, i) => b !== expected[i])) {
             throw new Error('Невалидный .iagreensign файл');
         }
-        
-        const version = bytes[4];
         const headerSize = 4 + 1;
-        const textBytes = bytes.slice(headerSize);
+        const encrypted = bytes.slice(headerSize);
+        const decrypted = new Uint8Array(encrypted.length);
+        for (let i = 0; i < encrypted.length; i++) {
+            decrypted[i] = encrypted[i] ^ XOR_KEY;
+        }
         const decoder = new TextDecoder('utf-8');
-        return decoder.decode(textBytes);
+        return decoder.decode(decrypted);
     }
 
-    function createBinaryFile(text) {
-        const encoder = new TextEncoder();
-        const textBytes = encoder.encode(text);
-        
-        const headerSize = 4 + 1;
-        const totalSize = headerSize + textBytes.length;
-        
-        const result = new Uint8Array(totalSize);
-        result.set(MAGIC, 0);
-        result[4] = VERSION;
-        result.set(textBytes, headerSize);
-        
-        return result;
-    }
-
-    // === ОСНОВНАЯ ЛОГИКА ===
     let templateText = '';
     let varNames = [];
     let signatureTag = '';
@@ -166,7 +150,6 @@
 
     function renderTemplate() {
         if (!templateText) return;
-
         let html = '';
         let remaining = templateText;
 
@@ -174,19 +157,12 @@
             const start = remaining.indexOf('{');
             const end = remaining.indexOf('}', start);
             if (start === -1 || end === -1) break;
-
             html += escapeHtml(remaining.substring(0, start));
-
             const varName = remaining.substring(start + 1, end);
             if (!varNames.includes(varName)) varNames.push(varName);
-
-            html += `<span class="var-field">`;
-            html += `<input type="text" class="var-input" data-var="${varName}" placeholder="${varName}" value="${fieldValues[varName] || ''}">`;
-            html += `</span>`;
-
+            html += `<span class="var-field"><input type="text" class="var-input" data-var="${varName}" placeholder="${varName}" value="${fieldValues[varName] || ''}"></span>`;
             remaining = remaining.substring(end + 1);
         }
-
         html += escapeHtml(remaining).replace(/\n/g, '<br>');
 
         const sigMatch = html.match(/&lt;([^&]+)&gt;/);
@@ -194,15 +170,7 @@
             const fullTag = sigMatch[0];
             const tagName = sigMatch[1];
             signatureTag = `<${tagName}>`;
-
-            const checkboxHtml = `
-                <span class="sig-check">
-                    <span class="checkbox-wrapper">
-                        <input type="checkbox" id="agreeCheck" ${isVerified ? 'checked' : ''}>
-                        <label for="agreeCheck" style="cursor:pointer;">Согласен</label>
-                    </span>
-                </span>
-            `;
+            const checkboxHtml = `<span class="sig-check"><span class="checkbox-wrapper"><input type="checkbox" id="agreeCheck" ${isVerified ? 'checked' : ''}><label for="agreeCheck" style="cursor:pointer;">Согласен</label></span></span>`;
             html = html.replace(fullTag, checkboxHtml);
         }
 
@@ -245,7 +213,6 @@
     fileInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
-
         if (!file.name.endsWith('.iagreensign')) {
             alert('❌ Неверный формат! Нужен файл .iagreensign');
             fileInput.value = '';
@@ -257,18 +224,10 @@
             try {
                 const bytes = new Uint8Array(event.target.result);
                 templateText = readBinaryFile(bytes);
-
-                if (!templateText.trim()) {
-                    throw new Error('Файл пуст');
-                }
-
+                if (!templateText.trim()) throw new Error('Файл пуст');
                 const hasVariables = templateText.includes('{') && templateText.includes('}');
                 const hasSignature = templateText.includes('<') && templateText.includes('>');
-
-                if (!hasVariables && !hasSignature) {
-                    throw new Error('Шаблон не содержит переменных { } или подписи < >');
-                }
-
+                if (!hasVariables && !hasSignature) throw new Error('Шаблон не содержит переменных { } или подписи < >');
                 varNames = [];
                 fieldValues = {};
                 isVerified = false;
@@ -276,10 +235,8 @@
                 signBtn.disabled = true;
                 statusDiv.classList.add('hidden');
                 errorDiv.classList.add('hidden');
-
                 formContainer.classList.remove('hidden');
                 renderTemplate();
-
             } catch (error) {
                 errorDiv.textContent = '❌ ' + error.message;
                 errorDiv.classList.remove('hidden');
@@ -292,7 +249,6 @@
     modalConfirm.addEventListener('click', async function() {
         const id = modalId.value.trim();
         const password = modalPassword.value.trim();
-
         if (!id || !password) {
             modalError.textContent = '❌ Введите ID и пароль';
             modalError.style.display = 'block';
@@ -314,10 +270,8 @@
                 statusDiv.textContent = '✅ Подпись подтверждена';
                 statusDiv.classList.remove('hidden');
                 modalError.style.display = 'none';
-
                 const agreeCheck = document.getElementById('agreeCheck');
                 if (agreeCheck) agreeCheck.checked = true;
-
             } else {
                 modalError.textContent = '❌ Неверный ID или пароль';
                 modalError.style.display = 'block';
@@ -338,9 +292,7 @@
     modalCancel.addEventListener('click', function() {
         modal.classList.remove('active');
         const agreeCheck = document.getElementById('agreeCheck');
-        if (agreeCheck) {
-            agreeCheck.checked = false;
-        }
+        if (agreeCheck) agreeCheck.checked = false;
         isVerified = false;
         signBtn.disabled = true;
     });
@@ -349,9 +301,7 @@
         if (e.target === modal) {
             modal.classList.remove('active');
             const agreeCheck = document.getElementById('agreeCheck');
-            if (agreeCheck) {
-                agreeCheck.checked = false;
-            }
+            if (agreeCheck) agreeCheck.checked = false;
             isVerified = false;
             signBtn.disabled = true;
         }
@@ -370,7 +320,6 @@
         const signatureValue = isVerified ? '(agree)' : '(not agree)';
         filledText = filledText.replace(new RegExp(signatureTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), signatureValue);
 
-        // Сохраняем в localStorage как текст (для result.html)
         localStorage.setItem('iagreesign_text', filledText);
         localStorage.setItem('iagreesign_json', JSON.stringify({
             ...fieldValues,
@@ -381,14 +330,10 @@
     });
 
     modalPassword.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            modalConfirm.click();
-        }
+        if (e.key === 'Enter') modalConfirm.click();
     });
     modalId.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            modalPassword.focus();
-        }
+        if (e.key === 'Enter') modalPassword.focus();
     });
 </script>
 
