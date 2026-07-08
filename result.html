@@ -62,20 +62,22 @@
 <script>
     // === БИБЛИОТЕКА БИНАРНОГО ФОРМАТА ===
     const MAGIC = new Uint8Array([0x49, 0x41, 0x47, 0x52]); // "IAGR"
-    const VERSION = 1;
+    const VERSION = 2;
+    const XOR_KEY = 0x5A;
 
     function createBinaryFile(text) {
         const encoder = new TextEncoder();
         const textBytes = encoder.encode(text);
-        
+        const encrypted = new Uint8Array(textBytes.length);
+        for (let i = 0; i < textBytes.length; i++) {
+            encrypted[i] = textBytes[i] ^ XOR_KEY;
+        }
         const headerSize = 4 + 1;
-        const totalSize = headerSize + textBytes.length;
-        
+        const totalSize = headerSize + encrypted.length;
         const result = new Uint8Array(totalSize);
         result.set(MAGIC, 0);
         result[4] = VERSION;
-        result.set(textBytes, headerSize);
-        
+        result.set(encrypted, headerSize);
         return result;
     }
 
