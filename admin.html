@@ -72,6 +72,27 @@
 <footer>© 2026 IAgree — Сервис подписания согласий</footer>
 
 <script>
+    // === БИБЛИОТЕКА БИНАРНОГО ФОРМАТА ===
+    const MAGIC = new Uint8Array([0x49, 0x41, 0x47, 0x52]); // "IAGR"
+    const VERSION = 2;
+    const XOR_KEY = 0x5A;
+
+    function createBinaryFile(text) {
+        const encoder = new TextEncoder();
+        const textBytes = encoder.encode(text);
+        const encrypted = new Uint8Array(textBytes.length);
+        for (let i = 0; i < textBytes.length; i++) {
+            encrypted[i] = textBytes[i] ^ XOR_KEY;
+        }
+        const headerSize = 4 + 1;
+        const totalSize = headerSize + encrypted.length;
+        const result = new Uint8Array(totalSize);
+        result.set(MAGIC, 0);
+        result[4] = VERSION;
+        result.set(encrypted, headerSize);
+        return result;
+    }
+
     let templateText = '';
     let iagreensignBlob = null;
 
@@ -80,52 +101,14 @@
     const resultDiv = document.getElementById('result');
     const downloadBtn = document.getElementById('downloadBtn');
 
-    // === БИБЛИОТЕКА БИНАРНОГО ФОРМАТА ===
-    const MAGIC = new Uint8Array([0x49, 0x41, 0x47, 0x52]); // "IAGR"
-    const VERSION = 1;
-
-    function createBinaryFile(text) {
-        const encoder = new TextEncoder();
-        const textBytes = encoder.encode(text);
-        
-        // Заголовок: магия (4 байта) + версия (1 байт)
-        const headerSize = 4 + 1;
-        const totalSize = headerSize + textBytes.length;
-        
-        const result = new Uint8Array(totalSize);
-        result.set(MAGIC, 0);
-        result[4] = VERSION;
-        result.set(textBytes, headerSize);
-        
-        return result;
-    }
-
-    function readBinaryFile(bytes) {
-        // Проверяем магию
-        const magic = bytes.slice(0, 4);
-        const expected = new Uint8Array([0x49, 0x41, 0x47, 0x52]);
-        if (magic.length !== expected.length || magic.some((b, i) => b !== expected[i])) {
-            throw new Error('Невалидный .iagreensign файл');
-        }
-        
-        const version = bytes[4];
-        const headerSize = 4 + 1;
-        const textBytes = bytes.slice(headerSize);
-        const decoder = new TextDecoder('utf-8');
-        return decoder.decode(textBytes);
-    }
-
-    // === ЛОГИКА ===
     fileInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
-
         if (!file.name.endsWith('.txt')) {
             alert('❌ Неверный формат! Нужен файл .txt');
             fileInput.value = '';
             return;
         }
-
         const reader = new FileReader();
         reader.onload = function(event) {
             templateText = event.target.result;
@@ -136,16 +119,12 @@
 
     generateBtn.addEventListener('click', function() {
         if (!templateText) return;
-
         const hasVariables = templateText.includes('{') && templateText.includes('}');
         const hasSignature = templateText.includes('<') && templateText.includes('>');
-
         if (!hasVariables && !hasSignature) {
-            alert('⚠️ Шаблон не содержит переменных { } или подписи < >. Убедитесь, что файл корректен.');
+            alert('⚠️ Шаблон не содержит переменных { } или подписи < >.');
             return;
         }
-
-        // Создаём бинарный файл
         const bytes = createBinaryFile(templateText);
         iagreensignBlob = new Blob([bytes], { type: 'application/octet-stream' });
         resultDiv.classList.remove('hidden');
