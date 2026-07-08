@@ -78,6 +78,24 @@
 <footer>© 2026 IAgree — Сервис подписания согласий</footer>
 
 <script>
+    // === БИБЛИОТЕКА БИНАРНОГО ФОРМАТА ===
+    const MAGIC = new Uint8Array([0x49, 0x41, 0x47, 0x52]); // "IAGR"
+    const VERSION = 1;
+
+    function readBinaryFile(bytes) {
+        const magic = bytes.slice(0, 4);
+        const expected = new Uint8Array([0x49, 0x41, 0x47, 0x52]);
+        if (magic.length !== expected.length || magic.some((b, i) => b !== expected[i])) {
+            throw new Error('Невалидный .iagreesign файл');
+        }
+        
+        const version = bytes[4];
+        const headerSize = 4 + 1;
+        const textBytes = bytes.slice(headerSize);
+        const decoder = new TextDecoder('utf-8');
+        return decoder.decode(textBytes);
+    }
+
     let signBytes = null;
     let signText = '';
 
@@ -92,7 +110,6 @@
         const file = e.target.files[0];
         if (!file) return;
 
-        // Проверяем расширение .iagreesign
         if (!file.name.endsWith('.iagreesign')) {
             alert('❌ Неверный формат! Нужен файл .iagreesign');
             fileInput.value = '';
@@ -113,8 +130,7 @@
         if (!signBytes) return;
 
         try {
-            const decoder = new TextDecoder('utf-8');
-            signText = decoder.decode(signBytes);
+            signText = readBinaryFile(signBytes);
 
             if (!signText.trim()) {
                 throw new Error('Файл пуст');
@@ -124,6 +140,7 @@
             resultDiv.classList.remove('hidden');
             errorDiv.classList.add('hidden');
         } catch (error) {
+            errorDiv.textContent = '❌ ' + error.message;
             errorDiv.classList.remove('hidden');
             resultDiv.classList.add('hidden');
             console.error('Ошибка:', error);
