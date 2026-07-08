@@ -79,8 +79,8 @@
 
 <script>
     // === БИБЛИОТЕКА БИНАРНОГО ФОРМАТА ===
-    const MAGIC = new Uint8Array([0x49, 0x41, 0x47, 0x52]); // "IAGR"
-    const VERSION = 1;
+    const MAGIC = new Uint8Array([0x49, 0x41, 0x47, 0x52]);
+    const XOR_KEY = 0x5A;
 
     function readBinaryFile(bytes) {
         const magic = bytes.slice(0, 4);
@@ -88,12 +88,14 @@
         if (magic.length !== expected.length || magic.some((b, i) => b !== expected[i])) {
             throw new Error('Невалидный .iagreesign файл');
         }
-        
-        const version = bytes[4];
         const headerSize = 4 + 1;
-        const textBytes = bytes.slice(headerSize);
+        const encrypted = bytes.slice(headerSize);
+        const decrypted = new Uint8Array(encrypted.length);
+        for (let i = 0; i < encrypted.length; i++) {
+            decrypted[i] = encrypted[i] ^ XOR_KEY;
+        }
         const decoder = new TextDecoder('utf-8');
-        return decoder.decode(textBytes);
+        return decoder.decode(decrypted);
     }
 
     let signBytes = null;
@@ -109,7 +111,6 @@
     fileInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
-
         if (!file.name.endsWith('.iagreesign')) {
             alert('❌ Неверный формат! Нужен файл .iagreesign');
             fileInput.value = '';
@@ -128,14 +129,9 @@
 
     checkBtn.addEventListener('click', function() {
         if (!signBytes) return;
-
         try {
             signText = readBinaryFile(signBytes);
-
-            if (!signText.trim()) {
-                throw new Error('Файл пуст');
-            }
-
+            if (!signText.trim()) throw new Error('Файл пуст');
             textContent.textContent = signText;
             resultDiv.classList.remove('hidden');
             errorDiv.classList.add('hidden');
@@ -143,7 +139,6 @@
             errorDiv.textContent = '❌ ' + error.message;
             errorDiv.classList.remove('hidden');
             resultDiv.classList.add('hidden');
-            console.error('Ошибка:', error);
         }
     });
 
